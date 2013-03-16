@@ -281,7 +281,7 @@
 
         _delegateEvents: function (events) {
             var emitter = this.$el;
-            this._undelegateEvents(emitter);
+            this._undelegateEvents();
 
             for (var key in events) {
                 var method = events[key];
@@ -304,7 +304,7 @@
             }
         },
     
-        _undelegateEvents: function(emitter) {
+        _undelegateEvents: function() {
             this.$el.off('.delegateEvents' + this.cid);
         },
     
@@ -315,6 +315,8 @@
         },
     
         delegateBusEvents: function (busEvents) {
+            this.stopListening(this.bus);
+
             if (!(busEvents || (busEvents = _.result(this, 'busEvents')))) return;
     
             _.each(busEvents, function (method, eventName) {
@@ -328,7 +330,7 @@
                     throw new Error('Method "' + method + '" does not exist or invalid')
                 }
 
-                this.listenTo(this.bus, eventName, fn, this)
+                this.listenTo(this.bus, eventName, fn)
             }, this);
         },
 
@@ -403,6 +405,7 @@
         destroy: function () {
             this._undelegateEvents();
             this.off();
+            this.stopListening();
 
             _.each(this.children, function (child, name) {
                 this.unregisterChild(name);
