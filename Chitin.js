@@ -340,7 +340,13 @@
             _.each(subWidgets, function (widgetClass, selector) {
                 if (_.isArray(widgetClass)) {
                     cls = widgetClass[0];
-                    options = widgetClass[1];
+                    options = {};
+
+                    if (_.isFunction(widgetClass[1])) {
+                        options = widgetClass[1].call(this)
+                    } else if (_.isString(widgetClass[1])) {
+                        options = this[widgetClass[1]]
+                    }
                 } else {
                     cls = widgetClass;
                     options = {};
