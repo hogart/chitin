@@ -26,10 +26,25 @@
         return this;
     };
 
+    /**
+     * @type {{templateSelectorPrefix: String, templateEngine: Function}}
+     */
     Chitin.config = {
-		templateSelectorPrefix: 'script.js-tpl-',
-		templateEngine: _.bind(_.template, _)
-	};
+        /**
+         * Prefix for searching template nodes in DOM
+         * @type String
+         * @default 'script.js-tpl-'
+         */
+        templateSelectorPrefix: 'script.js-tpl-',
+
+        /**
+         * Should be function accepting (templateString, [renderData])
+         * @type Function
+         * @default _.template
+         */
+        templateEngine: _.bind(_.template, _)
+    };
+
 
     // `extend` code below borrowed from Backbone.js. 'Coz it's awesome!
 
@@ -230,57 +245,39 @@
     };
 
 
-	function namespace (ns, content, root) {
-		if (ns === '') {
-      		throw new Error('Empty namespace')
-	  	}
-
-	  	var pathChunks = ns.split('.'),
-			path = '',
-			currentRoot = root;
-
-	  	while (pathChunks.length > 1) {
-			path = pathChunks.shift();
-
-			if (!(path in currentRoot)) {
-				currentRoot[path] = {}
-			}
-
-			currentRoot = currentRoot[path]
-		}
-
-		currentRoot[pathChunks[0]] = content;
-
-		return currentRoot[pathChunks[0]]
-	}
-
-	function widgetToPlugin (widgetClass) {
-		return function (options) {
-			var $el = $(this),
-				instance = $el.data('chitin');
-
-			if (!(instance && instance instanceof widgetClass)) {
-				options.el = $el;
-				instance = new widgetClass(options);
-
-				$el.data('chitin', instance);
-			}
-
-			return instance
-		}
-	}
-
-
     // Root of hierarchy. Automatically calls initialize method
     // which combines this.defaults and passed options into this.params
     var Abstract = Chitin.Abstract = function (options) {
         this.initialize(options);
     };
 
+
     Abstract.prototype = {
         initialize: function (options) {
-            this.params = _.extend({}, this.defaults || {}, options || {});
-        }
+            this.params = _.extend({}, _.result(this, 'defaults') || {}, options || {});
+        },
+
+        /**
+         * Calls super's method with given name and appropriate params
+         * @param {String} name Method name
+         * @param {arguments|Array} args Arguments
+         * @private
+         */
+        _superMethod: function (name, args) {
+            return this.__super__[name].apply(this, _.toArray(args));
+        },
+
+        /**
+         * Returns super's property (defined as object literal or function) in this context.
+         * Useful when such property is inherited.
+         * @param {String} name Property name
+         * @private
+         */
+        _superProperty: function (name) {
+            var prop = this.__super__[name];
+
+            return _.isFunction(prop) ? prop.call(this) : prop;
+         }
     };
 
     Abstract.extend = extend;
@@ -301,7 +298,7 @@
         },
 
         // override this method to change how do you operate your templates
-        getTemplate: function () {
+        _getTemplate: function () {
             var tpl = _.result(this, 'tpl');
             if (!tpl) {
                 throw new Error('No tpl property defined');
@@ -316,9 +313,11 @@
         },
 
         render: function (data) {
-			this._rendered = true; // mark instance as one that changed it's DOM
+            this.template = this.getTemplate();
 
             this.$el.html(this.template(data));
+
+            this._rendered = true; // mark instance as one that changed it's DOM
 
             this.onRender();
         },
@@ -441,8 +440,7 @@
             Widget.__super__.initialize.call(this, options);
 
             this.cid = _.uniqueId('widget');
-            this.$el = $(options.el);
-            this.template = this.getTemplate();
+            this.$el = $(this.params.el);
 
             this.bus = this.params.bus;
             this.delegateEvents();
@@ -461,24 +459,11 @@
             }, this);
 
             if (this._rendered) { // clear only if we changed DOM
-				this.$el.html('');
-			}
-
-			if (this.$el.data('chitin')) {
-				this.$el.removeData('chitin');
-			}
+                this.$el.html('');
+            }
         }
     });
 
-	Widget.extend = function (protoProps, staticProps, ns) {
-		var cls = extend.apply(this, _.initial(arguments, 2));
-
-		if (arguments.length == 3) { // we should create jQuery plugin
-			namespace(ns, widgetToPlugin(cls), $.fn);
-		}
-
-		return cls;
-	};
 
     var Application = Chitin.Application = Observable.extend({
         defaults: {
