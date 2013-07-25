@@ -35,8 +35,8 @@
             var cls = extend.apply(this, _.initial(arguments, 2));
 
             if (arguments.length == 3) { // we should create jQuery plugin
-    			$.fn[name] = widgetToPlugin(cls);
-				$.chitin[name] = cls;
+                $.fn[name] = widgetToPlugin(cls);
+                $.chitin[name] = cls;
             }
 
             cls.extend = pluginExtend;
@@ -61,9 +61,9 @@
             parent = Chitin.Widget;
         }
 
-		if (typeof parent == 'string') {
-			parent = $.chitin[parent];
-		}
+        if (typeof parent == 'string') {
+            parent = $.chitin[parent];
+        }
 
         parent.extend(protoProps, staticProps, name);
     };
