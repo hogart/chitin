@@ -313,7 +313,7 @@
         },
 
         render: function (data) {
-            this.template = this.getTemplate();
+            this.template = this._getTemplate();
 
             this.$el.html(this.template(data));
 
