@@ -8,144 +8,163 @@
     }
 }(function ($, _, Chitin) {
     var Modal = Chitin.Widget.extend(
-  	{
-			defaults: {
-				body: 'body',
-				footer: '.b-footer',
-				win: window,
-				doc: document
-			},
+        {
+            defaults: {
+                body: 'body',
+                footer: '.b-footer',
+                win: window,
+                doc: document,
 
-			events: {
-				'click': 'onCloseClick'
-			},
+                closeOnShade: true,
+                closeOnEsc: true
+            },
 
-			_ui: {
-				modalBody: '.b-modal',
-				spacer: '.b-modal_space'
-			},
+            events: {
+                'click': 'onCloseClick'
+            },
 
-			initialize: function (options) {
-				this._superMethod('initialize', arguments);
+            _ui: {
+                modalBody: '.b-modal',
+                spacer: '.b-modal_space'
+            },
 
-				this.globals = {
-					body: $(this.params.body),
-					footer: $(this.params.footer),
-					win: $(this.params.win),
-					doc: $(this.params.doc)
-				};
+            initialize: function (options) {
+                this._superMethod('initialize', arguments);
 
-				this._ensureUI();
+                this.globals = {
+                    body: $(this.params.body),
+                    footer: $(this.params.footer),
+                    win: $(this.params.win),
+                    doc: $(this.params.doc)
+                };
 
-				if (this.params.show) {
-					this.show();
-				}
-			},
+                this._ensureUI();
 
-			_hasPageScroll: function () {
-				return this.globals.doc.height() != this.globals.win.height();
-			},
+                if (this.params.show) {
+                    this.show();
+                }
 
-			_hasModalScroll: function () {
-				if (this._hasPageScroll()) {
-					return this.ui.spacer.outerHeight() <= this.$el.height()
-				} else {
-					return this.ui.spacer.outerHeight() > this.$el.height()
-				}
-			},
+                this.params.closeOnEsc && this.globals.doc.on('keyup', _.bind(this.onEsc, this));
+            },
 
-			_getScrollbarWidth: function () {
-				var body = this.globals.body,
-					widthSmall,
-					widthLarge;
+            _hasPageScroll: function () {
+                return this.globals.doc.height() != this.globals.win.height();
+            },
 
-				body.addClass('b-modal_bodytest_one');
-				widthSmall = body.width();
+            _hasModalScroll: function () {
+                if (this._hasPageScroll()) {
+                    return this.ui.spacer.outerHeight() <= this.$el.height()
+                } else {
+                    return this.ui.spacer.outerHeight() > this.$el.height()
+                }
+            },
 
-				body.removeClass('b-modal_bodytest_one').addClass('b-modal_bodytest_two');
-				widthLarge = body.width();
-				body.removeClass('b-modal_bodytest_two');
+            _getScrollbarWidth: function () {
+                var body = this.globals.body,
+                    widthSmall,
+                    widthLarge;
 
-				return widthLarge - widthSmall;
-			},
+                body.addClass('b-modal_bodytest_one');
+                widthSmall = body.width();
 
-			show: function () {
-				var scrollBarWidth = this._getScrollbarWidth(),
-					hasPageScroll = this._hasPageScroll(),
-					hasModalScroll = this._hasModalScroll(),
-					bodyCSS = {
-						marginRight: hasPageScroll ? scrollBarWidth : 0
-					},
-					footerCSS = {
-						paddingRight: hasPageScroll ? scrollBarWidth : 0,
-						right: hasPageScroll ? -scrollBarWidth : 0
-					};
+                body.removeClass('b-modal_bodytest_one').addClass('b-modal_bodytest_two');
+                widthLarge = body.width();
+                body.removeClass('b-modal_bodytest_two');
 
-				// show modal
-				this.globals.body.addClass('overflowhidden');
-				this.$el.addClass('modal-visible');
+                return widthLarge - widthSmall;
+            },
 
-				// adjust body and footer
-				this.globals.body.css(bodyCSS);
-				this.globals.footer.css(footerCSS);
+            show: function () {
+                var scrollBarWidth = this._getScrollbarWidth(),
+                    hasPageScroll = this._hasPageScroll(),
+                    hasModalScroll = this._hasModalScroll(),
+                    bodyCSS = {
+                        marginRight: hasPageScroll ? scrollBarWidth : 0
+                    },
+                    footerCSS = {
+                        paddingRight: hasPageScroll ? scrollBarWidth : 0,
+                        right: hasPageScroll ? -scrollBarWidth : 0
+                    };
 
-				// adjust modal window itself
-				var modalCSS = {marginRight: 0};
-				if (hasPageScroll) {
-					if (hasModalScroll) {
-						modalCSS.marginRight = scrollBarWidth
-					}
-				} else {
-					if (hasModalScroll) {
-						modalCSS.marginRight = -scrollBarWidth
-					}
-				}
-				this.ui.modalBody.css(modalCSS);
-			},
+                // show modal
+                this.globals.body.addClass('overflowhidden');
+                this.$el.addClass('modal-visible');
 
-			hide: function () {
-				this.ui.modalBody.css({marginRight: 0});
-				this.$el.removeClass('modal-visible');
+                // adjust body and footer
+                this.globals.body.css(bodyCSS);
+                this.globals.footer.css(footerCSS);
 
-				this.globals.body
-					.removeClass('overflowhidden')
-					.css({marginRight: 0});
+                // adjust modal window itself
+                var modalCSS = {marginRight: 0};
+                if (hasPageScroll) {
+                    if (hasModalScroll) {
+                        modalCSS.marginRight = scrollBarWidth
+                    }
+                } else {
+                    if (hasModalScroll) {
+                        modalCSS.marginRight = -scrollBarWidth
+                    }
+                }
 
-				this.globals.footer
-					.css({
-						paddingRight: 0,
-						right: 0
-					})
-			},
+                this.ui.modalBody.css(modalCSS);
 
-			onCloseClick: function (evt) {
-				if (evt.target.className.indexOf('js-closeModal') > -1) {
-					this.hide();
-				}
-			}
-		},
-		{
-			autorun: function () {
-				var instances = this.instances = [];
+                this.opened = true;
+            },
 
-				$('body').on('click.chitinModal', '.js-chitinModal', function (evt) {
-					var target = $(evt.target),
-						selector = target.attr('data-modal-selector');
+            hide: function () {
+                this.ui.modalBody.css({marginRight: 0});
+                this.$el.removeClass('modal-visible');
 
-					var instance = _.filter(instances, function (modalInstance) {
-						return modalInstance.$el.is(selector);
-					})[0]; // _.filter returns array
+                this.globals.body
+                    .removeClass('overflowhidden')
+                    .css({marginRight: 0});
 
-					if (instance) {
-						instance.show();
-					} else {
-						instances.push(
-							new Modal({el: selector, show: true})
-						)
-					}
-				})
-			}
-		},
-		'modal'
-	)
+                this.globals.footer
+                    .css({
+                        paddingRight: 0,
+                        right: 0
+                    });
+
+                this.opened = false;
+            },
+
+            onCloseClick: function (evt) {
+                var isCloseLink = evt.target.className.indexOf('js-closeModal') > -1,
+                    isShade = this.$el.is(evt.target) && this.params.closeOnShade;
+
+                if (isCloseLink || isShade) {
+                    this.hide();
+                }
+            },
+
+            onEsc: function (evt) {
+                if (evt.which == 27 && this.opened) {
+                    this.hide();
+                }
+            }
+        },
+        {
+            autorun: function () {
+                var instances = this.instances = [];
+
+                $('body').on('click.chitinModal', '.js-chitinModal', function (evt) {
+                    var target = $(evt.target),
+                        selector = target.attr('data-modal-selector');
+
+                    var instance = _.filter(instances, function (modalInstance) {
+                        return modalInstance.$el.is(selector);
+                    })[0]; // _.filter returns array
+
+                    if (instance) {
+                        instance.show();
+                    } else {
+                        instances.push(
+                            new Modal({el: selector, show: true})
+                        )
+                    }
+                })
+            }
+        },
+        'modal'
+    )
 }));
