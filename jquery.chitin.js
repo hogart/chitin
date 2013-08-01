@@ -32,7 +32,7 @@
 
     var extend = Chitin.Widget.extend, // save original extend
         pluginExtend = function (protoProps, staticProps, name) {
-            var cls = extend.apply(this, _.initial(arguments, 2));
+            var cls = extend.call(this, protoProps, staticProps);
 
             if (arguments.length == 3) { // we should create jQuery plugin
                 $.fn[name] = widgetToPlugin(cls);
