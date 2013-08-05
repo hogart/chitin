@@ -1,14 +1,28 @@
 (function (factory) {
-  if (typeof define === 'function' && define.amd) {
-    	// AMD. Register as an anonymous module.
-		define(['jquery', '_', '../b-common/chitin', 'jquery.chitin'], factory);
-	} else {
-		// Browser globals
-		factory(jQuery, _, Chitin);
-	}
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define(['jquery', '_', 'Chitin', 'jquery.chitin'], factory);
+    } else {
+        // Browser globals
+        factory(jQuery, _, Chitin);
+    }
 }(function ($, _, Chitin) {
-	var Modal = Chitin.Widget.extend(
-		{
+	if (!Chitin.Widgets) {
+		/**
+		 * @namespace all built-in Chitin widgets
+		 */
+		Chitin.Widgets = {}
+	}
+
+	/**
+	 * Simple modal windows. Features:
+	 * 	* Disables page scrolling while open
+	 * 	* Closes on Esc (can be turned off)
+	 * 	* Closes when shade is clicked
+	 * @class Chitin.Widgets.Modal
+	 */
+    var Modal = Chitin.Widgets.Modal = Chitin.Widget.extend(
+		/** @lends Chitin.Widgets.Modal */{
 			defaults: {
 				body: 'body',
 				footer: '.b-footer',
@@ -28,6 +42,10 @@
 				spacer: '.b-modal_space'
 			},
 
+			/**
+			 * @constructor
+			 * @param {Object} options
+			 */
 			initialize: function (options) {
 				Modal.__super__.initialize.call(this, options);
 
@@ -94,30 +112,35 @@
 				this.ui.modalBody.css(modalCSS);
 
 				this.opened = true;
+
+				this.trigger('chitin.modal.show');
 			},
 
 			hide: function () {
-				this.ui.modalBody.css({marginRight: 0});
+				this.ui.modalBody.css({marginRight: ''}); // this effectively deletes el.style.marginRight
 				this.$el.removeClass('modal-visible');
 
 				this.globals.body
 					.removeClass('overflowhidden')
-					.css({marginRight: 0});
+					.css({marginRight: ''});
 
 				this.globals.footer
 					.css({
-						paddingRight: 0,
-						right: 0
+						paddingRight: '',
+						right: ''
 					});
 
 				this.opened = false;
+
+				this.trigger('chitin.modal.hide');
 			},
 
 			onCloseClick: function (evt) {
 				var isCloseLink = evt.target.className.indexOf('js-closeModal') > -1,
-					isShade = this.$el.is(evt.target) && this.params.closeOnShade;
+					isShade = this.$el.is(evt.target) && this.params.closeOnShade,
+					isSpacer = this.ui.spacer.is(evt.target);
 
-				if (isCloseLink || isShade) {
+				if (isCloseLink || isShade || isSpacer) {
 					this.hide();
 				}
 			},
@@ -127,14 +150,20 @@
 					this.hide();
 				}
 			}
-		},
-		{
-			autorun: function () {
+        },
+        /** @lends Chitin.Widgets.Modal */{
+			/**
+			 * Performs automagical activation of this widget. Should be called on DOM ready or before closing </body>
+			 * @param {String} [selector='.js-chitinModal'] which elements should fire modal windows
+			 */
+			autorun: function (selector) {
 				var instances = this.instances = [];
+
+				selector = selector || '.js-chitinModal';
 
 				this.scrollBarWidth = this._getScrollbarWidth();
 
-				$('body').on('click', '.js-chitinModal', function (evt) {
+				$('body').on('click', selector, function (evt) {
 					var target = $(evt.target),
 						selector = target.attr('data-modal-selector');
 
@@ -165,7 +194,7 @@
 
 				return widthLarge - widthSmall;
 			},
-		},
-		'modal'
-	)
+        },
+        'modal'
+    )
 }));
