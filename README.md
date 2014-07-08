@@ -32,7 +32,7 @@ you get parent's properties:
 
     var DialogForm = Dialog.extend({
         events: function () {
-            var parentEvents = this._superProperty('events);
+            var parentEvents = this._superProperty('events');
 
             var events = _.extend({}, parentEvents, {
                 'reset form': 'close'
